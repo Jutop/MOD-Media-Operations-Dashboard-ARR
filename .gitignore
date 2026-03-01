@@ -1,0 +1,72 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.ovpn
+*.wireguard
+*-wg-*.conf
+nl-ams-wg-*.conf
+no-osl-wg-*.conf
+
+# Docker local overrides
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.*.local.yml
+
+# Runtime / database / logs
+*.pid
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.bak
+
+# Project runtime data (do not upload)
+/config/
+/media/
+/tv/
+/movies/
+/music/
+/books/
+/downloads/
+/backups/
+/mnt/
+/tmp/
+/temp/
+
+# Dashboard build/runtime artifacts
+/dashboard_app/__pycache__/
+
+# Large archives and generated dumps
+*.tar
+*.tar.gz
+*.zip
+*.7z

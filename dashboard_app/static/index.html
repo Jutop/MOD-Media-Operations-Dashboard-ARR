@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Ops Bridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="fx-bg" aria-hidden="true"></div>
+
+  <main class="bridge-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <img class="hero-brand-left" src="./images/MOD_logo.png" alt="Media Operations Dashboard">
+      </div>
+      <div class="hero-meta">
+        <div class="lang-switch">
+          <label for="languageSelect" data-i18n="ui.language">Language</label>
+          <select id="languageSelect" aria-label="Language">
+            <option value="en" data-i18n="lang.en">English</option>
+            <option value="de" data-i18n="lang.de">Deutsch</option>
+          </select>
+        </div>
+        <span id="lastUpdated" data-i18n="status.waiting">Waiting for refresh...</span>
+      </div>
+    </header>
+
+    <section class="summary-strip" aria-label="Global summary">
+      <article class="summary-card">
+        <span data-i18n="summary.services">Services</span>
+        <strong id="sumServices">-</strong>
+        <small id="sumServicesMeta">-</small>
+      </article>
+      <article class="summary-card">
+        <span data-i18n="summary.queueJobs">Queue Jobs</span>
+        <strong id="sumQueue">-</strong>
+        <small data-i18n="summary.queueHint">Sonarr + Radarr + SAB</small>
+      </article>
+      <article class="summary-card">
+        <span data-i18n="summary.librarySize">Library Size</span>
+        <strong id="sumLibrary">-</strong>
+        <small data-i18n="summary.libraryHint">Movies + Series tracked</small>
+      </article>
+      <article class="summary-card">
+        <span data-i18n="summary.upcoming">Upcoming</span>
+        <strong id="sumUpcoming">-</strong>
+        <small data-i18n="summary.upcomingHint">Next 45 days</small>
+      </article>
+      <article class="summary-card">
+        <span data-i18n="summary.healthIssues">Health Issues</span>
+        <strong id="sumIssues">-</strong>
+        <small data-i18n="summary.healthHint">Warnings + errors</small>
+      </article>
+    </section>
+
+    <section class="main-grid">
+      <section class="control-pane">
+        <article class="panel control-card">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="panel.containerControls">Container Controls</h2>
+              <p data-i18n="panel.containerControlsDesc">Start, stop, or restart managed containers.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="table.service">Service</th>
+                  <th data-i18n="table.status">Status</th>
+                  <th data-i18n="table.health">Health</th>
+                  <th data-i18n="table.actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="containerRows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel control-card">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="panel.rootFolders">Root Folders</h2>
+              <p data-i18n="panel.rootFoldersDesc">Add or remove root folders for Radarr and Sonarr.</p>
+            </div>
+          </div>
+
+          <div class="folder-section">
+            <div class="folder-head">
+              <div class="title-with-logo">
+                <img src="./images/radar_logo.png" alt="Radarr">
+                <h3 data-i18n="panel.radarrRoots">Radarr Roots</h3>
+              </div>
+              <form id="radarrRootForm" class="inline-form">
+                <input id="radarrRootInput" type="text" placeholder="/media/movies" data-i18n-placeholder="placeholder.radarrRoot" required>
+                <button type="submit" data-i18n="action.add">Add</button>
+              </form>
+            </div>
+            <div class="chip-list" id="radarrRootList"></div>
+          </div>
+
+          <div class="folder-section">
+            <div class="folder-head">
+              <div class="title-with-logo">
+                <img src="./images/sonarr_logo.png" alt="Sonarr">
+                <h3 data-i18n="panel.sonarrRoots">Sonarr Roots</h3>
+              </div>
+              <form id="sonarrRootForm" class="inline-form">
+                <input id="sonarrRootInput" type="text" placeholder="/media/tv" data-i18n-placeholder="placeholder.sonarrRoot" required>
+                <button type="submit" data-i18n="action.add">Add</button>
+              </form>
+            </div>
+            <div class="chip-list" id="sonarrRootList"></div>
+          </div>
+        </article>
+
+        <article class="panel control-card">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="panel.sabPaths">SAB Paths</h2>
+              <p data-i18n="panel.sabPathsDesc">Manage active SABnzbd download folders.</p>
+            </div>
+          </div>
+
+          <form id="sabPathsForm" class="stack-form">
+            <label>
+              <span data-i18n="sab.incompleteDir">Incomplete / Active Download Dir</span>
+              <input id="sabDownloadDirInput" type="text" placeholder="/media/downloads/incomplete" data-i18n-placeholder="placeholder.sabIncomplete">
+            </label>
+            <label>
+              <span data-i18n="sab.completeDir">Complete Download Dir</span>
+              <input id="sabCompleteDirInput" type="text" placeholder="/media/downloads/complete" data-i18n-placeholder="placeholder.sabComplete">
+            </label>
+            <div class="form-actions">
+              <button type="submit" data-i18n="action.saveSabPaths">Save SAB Paths</button>
+            </div>
+          </form>
+        </article>
+      </section>
+
+      <section class="data-pane">
+        <article class="panel data-card vpn-card" id="vpnCard">
+          <div class="panel-head compact">
+            <div>
+              <h2 data-i18n="panel.vpnStatus">VPN Status</h2>
+              <p id="vpnReason" data-i18n="status.noStatus">No status available</p>
+            </div>
+            <span class="pill unknown" id="vpnCardPill">VPN UNKNOWN</span>
+          </div>
+
+          <div class="vpn-grid">
+            <div class="ip-block">
+              <span data-i18n="vpn.currentEgressIp">Current Egress IP</span>
+              <div class="ip-line">
+                <strong id="vpnCurrentIp">-</strong>
+                <div class="vpn-wave unknown" id="vpnWave" aria-hidden="true">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+            <div class="kv-grid">
+              <div><span data-i18n="vpn.owner">Owner</span><strong id="vpnOwner">-</strong></div>
+              <div><span data-i18n="vpn.hostIp">Host IP</span><strong id="vpnHostIp">-</strong></div>
+              <div><span data-i18n="vpn.tunnelIp">Tunnel IP</span><strong id="vpnTunnelIp">-</strong></div>
+              <div><span data-i18n="vpn.provider">Provider</span><strong id="vpnProvider">-</strong></div>
+            </div>
+          </div>
+
+          <div class="quick-links">
+            <a id="openRadarr" href="#" target="_blank" rel="noopener noreferrer"><img src="./images/radar_logo.png" alt="Radarr"><span>Radarr</span></a>
+            <a id="openSonarr" href="#" target="_blank" rel="noopener noreferrer"><img src="./images/sonarr_logo.png" alt="Sonarr"><span>Sonarr</span></a>
+            <a id="openSab" href="#" target="_blank" rel="noopener noreferrer"><img src="./images/sab_logo.png" alt="SABnzbd"><span>SABnzbd</span></a>
+            <button id="openAllApps" type="button" class="quick-links-openall" data-i18n="action.openAllTabs">Open All 3 Tabs</button>
+          </div>
+        </article>
+
+        <article class="panel data-card" id="radarrCard">
+          <div class="panel-head compact">
+            <div class="title-with-logo">
+              <img src="./images/radar_logo.png" alt="Radarr">
+              <div>
+                <h2>Radarr</h2>
+                <p id="radarrMeta" data-i18n="status.connecting">Connecting...</p>
+              </div>
+            </div>
+            <span class="pill unknown" id="radarrPill" data-i18n="status.checking">Checking</span>
+          </div>
+          <div class="mini-kpis" id="radarrKpis"></div>
+          <ul class="essential-list" id="radarrEssential"></ul>
+        </article>
+
+        <article class="panel data-card" id="sonarrCard">
+          <div class="panel-head compact">
+            <div class="title-with-logo">
+              <img src="./images/sonarr_logo.png" alt="Sonarr">
+              <div>
+                <h2>Sonarr</h2>
+                <p id="sonarrMeta" data-i18n="status.connecting">Connecting...</p>
+              </div>
+            </div>
+            <span class="pill unknown" id="sonarrPill" data-i18n="status.checking">Checking</span>
+          </div>
+          <div class="mini-kpis" id="sonarrKpis"></div>
+          <ul class="essential-list" id="sonarrEssential"></ul>
+        </article>
+
+        <article class="panel data-card" id="sabCard">
+          <div class="panel-head compact">
+            <div class="title-with-logo">
+              <img src="./images/sab_logo.png" alt="SABnzbd">
+              <div>
+                <h2>SABnzbd</h2>
+                <p id="sabMeta" data-i18n="status.connecting">Connecting...</p>
+              </div>
+            </div>
+            <span class="pill unknown" id="sabPill" data-i18n="status.checking">Checking</span>
+          </div>
+          <div class="mini-kpis" id="sabKpis"></div>
+          <ul class="essential-list" id="sabEssential"></ul>
+        </article>
+
+        <article class="panel data-card" id="ombiCard">
+          <div class="panel-head compact">
+            <div class="title-with-logo">
+              <img src="./images/ombi.png" alt="Ombi">
+              <div>
+                <h2>Ombi</h2>
+                <p id="ombiMeta" data-i18n="status.connecting">Connecting...</p>
+              </div>
+            </div>
+            <span class="pill unknown" id="ombiPill" data-i18n="status.checking">Checking</span>
+          </div>
+          <div class="mini-kpis" id="ombiKpis"></div>
+          <ul class="essential-list" id="ombiEssential"></ul>
+        </article>
+      </section>
+
+      <aside class="queue-pane">
+        <article class="panel data-card sab-live-sidecard">
+          <div class="sab-live-head">
+            <h3 data-i18n="panel.liveSabQueue">Live SAB Queue</h3>
+          </div>
+          <div class="sab-live-list" id="sabLiveQueue"></div>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
