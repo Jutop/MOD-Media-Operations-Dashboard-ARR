@@ -281,6 +281,8 @@ body {
   grid-template-columns: 1fr;
   align-content: start;
   padding-right: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .vpn-card {
@@ -603,18 +605,19 @@ tbody tr:nth-child(even) td {
 
 .sab-live-list {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   max-height: 210px;
   overflow: auto;
 }
 
 .sab-live-item {
   border: 1px solid rgba(117, 162, 194, 0.28);
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(13, 30, 46, 0.8);
-  padding: 7px;
+  padding: 6px;
   display: grid;
-  gap: 5px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .sab-live-top {
@@ -622,18 +625,21 @@ tbody tr:nth-child(even) td {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
+  min-width: 0;
 }
 
 .sab-live-title {
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   color: #e8f4ff;
+  flex: 1 1 auto;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .sab-live-state {
-  font-size: 0.67rem;
+  font-size: 0.63rem;
   color: #9cc5df;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -643,13 +649,13 @@ tbody tr:nth-child(even) td {
 .sab-live-meta {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 0.67rem;
+  gap: 8px;
+  font-size: 0.63rem;
   color: #8db3cd;
 }
 
 .sab-live-progress {
-  height: 7px;
+  height: 6px;
   border-radius: 999px;
   background: rgba(128, 166, 193, 0.24);
   overflow: hidden;
@@ -666,8 +672,8 @@ tbody tr:nth-child(even) td {
   border: 1px dashed rgba(120, 164, 196, 0.35);
   border-radius: 8px;
   color: #93b7d1;
-  font-size: 0.72rem;
-  padding: 8px;
+  font-size: 0.69rem;
+  padding: 6px;
   text-align: center;
 }
 
@@ -679,8 +685,10 @@ tbody tr:nth-child(even) td {
 
 .sab-live-sidecard .sab-live-list {
   max-height: none;
-  height: 100%;
-  min-height: 520px;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .vpn-card {
@@ -795,7 +803,7 @@ tbody tr:nth-child(even) td {
 .quick-links {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1020,12 +1028,13 @@ tbody tr:nth-child(even) td {
   }
 
   .queue-pane {
-    overflow: visible;
+    overflow-y: visible;
+    overflow-x: hidden;
     padding-right: 0;
   }
 
   .sab-live-sidecard .sab-live-list {
-    min-height: 220px;
+    min-height: 0;
   }
 
   .control-pane {

@@ -1,7 +1,7 @@
 const DASH_REFRESH_MS = 5000;
 const ADMIN_REFRESH_MS = 15000;
 const SAB_REFRESH_MS = 1000;
-const SAB_LIVE_LIMIT = 6;
+const SAB_LIVE_LIMIT = 5;
 const LANG_STORAGE_KEY = "dashboard_language";
 const SUPPORTED_LANGUAGES = ["en", "de"];
 
@@ -26,6 +26,7 @@ const ids = {
   openRadarr: document.getElementById("openRadarr"),
   openSonarr: document.getElementById("openSonarr"),
   openSab: document.getElementById("openSab"),
+  openOmbi: document.getElementById("openOmbi"),
   openAllApps: document.getElementById("openAllApps"),
   containerRows: document.getElementById("containerRows"),
   radarrRootList: document.getElementById("radarrRootList"),
@@ -141,7 +142,7 @@ const I18N = {
 
     "action.add": "Add",
     "action.saveSabPaths": "Save SAB Paths",
-    "action.openAllTabs": "Open All 3 Tabs",
+    "action.openAllTabs": "Open All Tabs",
     "action.start": "start",
     "action.stop": "stop",
     "action.restart": "restart",
@@ -306,7 +307,7 @@ const I18N = {
 
     "action.add": "Hinzuf\u00fcgen",
     "action.saveSabPaths": "SAB-Pfade speichern",
-    "action.openAllTabs": "Alle 3 Tabs \u00f6ffnen",
+    "action.openAllTabs": "Alle Tabs \u00f6ffnen",
     "action.start": "starten",
     "action.stop": "stoppen",
     "action.restart": "neu starten",
@@ -741,8 +742,10 @@ function renderVpn(dashboard) {
   ids.openRadarr.href = services.radarr?.url || "#";
   ids.openSonarr.href = services.sonarr?.url || "#";
   ids.openSab.href = services.sabnzbd?.url || "#";
+  ids.openOmbi.href = services.ombi?.url || "#";
   if (ids.openAllApps) {
-    const openableCount = [ids.openRadarr.href, ids.openSonarr.href, ids.openSab.href].filter((url) => url && url !== "#").length;
+    const openableCount = [ids.openRadarr.href, ids.openSonarr.href, ids.openSab.href, ids.openOmbi.href]
+      .filter((url) => url && url !== "#").length;
     ids.openAllApps.disabled = openableCount === 0;
   }
 }
@@ -1178,7 +1181,8 @@ ids.sabPathsForm.addEventListener("submit", (event) => {
 
 if (ids.openAllApps) {
   ids.openAllApps.addEventListener("click", () => {
-    const targets = [ids.openRadarr?.href, ids.openSonarr?.href, ids.openSab?.href].filter((url) => url && url !== "#");
+    const targets = [ids.openRadarr?.href, ids.openSonarr?.href, ids.openSab?.href, ids.openOmbi?.href]
+      .filter((url) => url && url !== "#");
     if (targets.length === 0) {
       showToast(t("toast.noServiceTabs"), true);
       return;
