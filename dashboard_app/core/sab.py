@@ -58,8 +58,10 @@ def sab_set_config_value(keyword: str, value: str) -> dict:
     )
     payload = fetch_json(f"{conf['base_url']}/api?{query}")
     status = payload.get("status", payload.get("result", payload.get("success")))
+    reflected = payload.get("config", {}).get("misc", {}).get(keyword)
+    reflected_ok = reflected is not None and str(reflected).strip() == str(value).strip()
     return {
-        "ok": bool(status in (True, "ok", "OK", "true", "True", 1, "1")),
+        "ok": bool(status in (True, "ok", "OK", "true", "True", 1, "1") or reflected_ok),
         "raw": payload,
         "keyword": keyword,
         "value": value,

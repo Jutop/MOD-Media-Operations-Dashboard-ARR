@@ -15,6 +15,7 @@ from .integrations import (
     perform_container_action,
     set_sab_paths,
 )
+from .settings import get_settings_status, save_settings
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
@@ -43,6 +44,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             return {}
         except json.JSONDecodeError:
             return {}
+
+    def _redirect(self, location: str, status_code: int = 302):
+        self.send_response(status_code)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _serve_dashboard_image(self):
         raw_path = unquote(self.path.split("?", 1)[0])
@@ -74,6 +81,27 @@ class DashboardHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?", 1)[0]
 
+        if path == "/settings":
+            self.path = "/settings.html"
+            super().do_GET()
+            return
+
+        if path == "/setup":
+            self._redirect("/settings")
+            return
+
+        if path == "/api/settings":
+            self._send_json(get_settings_status())
+            return
+
+        if path == "/healthz":
+            self._send_json({"ok": True})
+            return
+
+        if path.startswith("/images/"):
+            self._serve_dashboard_image()
+            return
+
         if path == "/api/dashboard":
             self._send_json(build_dashboard_payload())
             return
@@ -86,19 +114,17 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             self._send_json(build_admin_payload())
             return
 
-        if path == "/healthz":
-            self._send_json({"ok": True})
-            return
-
-        if path.startswith("/images/"):
-            self._serve_dashboard_image()
-            return
-
         super().do_GET()
 
     def do_POST(self):
         path = self.path.split("?", 1)[0]
         payload = self._read_json_body()
+
+        if path == "/api/settings/save":
+            result = save_settings(payload)
+            status_code = 200 if result.get("ok") else 400
+            self._send_json(result, status_code=status_code)
+            return
 
         try:
             if path == "/api/manage/container":

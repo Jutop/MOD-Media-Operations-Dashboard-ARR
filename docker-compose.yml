@@ -2,22 +2,14 @@ services:
   init_dirs:
     image: alpine:3.20
     container_name: media-init-dirs
+    network_mode: "none"
     volumes:
       - ./config:/workspace/config
       - ./media:/workspace/media
       - ./backups:/workspace/backups
     command: >
       /bin/sh -ec "
-      mkdir -p \
-        /workspace/config/sabnzbd \
-        /workspace/config/sonarr \
-        /workspace/config/radarr \
-        /workspace/config/ombi \
-        /workspace/media/downloads/incomplete \
-        /workspace/media/downloads/complete \
-        /workspace/media/movies \
-        /workspace/media/tv \
-        /workspace/backups;
+      mkdir -p /workspace/config/sabnzbd /workspace/config/sonarr /workspace/config/radarr /workspace/config/ombi /workspace/media/downloads/incomplete /workspace/media/downloads/complete /workspace/media/movies /workspace/media/tv /workspace/backups;
       echo 'init: required folders are ready';
       "
     restart: "no"
@@ -123,22 +115,21 @@ services:
   backup:
     image: alpine:3.20
     container_name: media-backup
+    network_mode: "none"
     environment:
       - TZ=${TZ:-America/New_York}
       - BACKUP_INTERVAL_HOURS=${BACKUP_INTERVAL_HOURS:-24}
       - RETENTION_DAYS=${RETENTION_DAYS:-14}
     volumes:
       - ./config:/data/config:ro
-      - ./media:/data/media:ro
       - ./backups:/backups
     command: >
       /bin/sh -c "
       set -eu;
-      apk add --no-cache tzdata;
       while true; do
         ts=$$(date +%Y%m%d-%H%M%S);
         dest=/backups/media-backup-$$ts.tar.gz;
-        tar -czf $$dest -C /data config media;
+        tar -czf $$dest -C /data config;
         find /backups -type f -name 'media-backup-*.tar.gz' -mtime +$${RETENTION_DAYS} -delete;
         sleep $$(($${BACKUP_INTERVAL_HOURS} * 3600));
       done
@@ -147,8 +138,6 @@ services:
       init_dirs:
         condition: service_completed_successfully
     restart: unless-stopped
-    networks:
-      - media-net
 
   dashboard:
     build:
@@ -197,6 +186,7 @@ services:
   vpn_guard:
     image: docker:27-cli
     container_name: vpn-guard
+    network_mode: "none"
     environment:
       - GLUETUN_CONTAINER=gluetun
       - TARGET_CONTAINERS=sabnzbd sonarr radarr ombi media-dashboard media-backup
@@ -221,8 +211,6 @@ services:
     depends_on:
       - gluetun
     restart: unless-stopped
-    networks:
-      - media-net
 
 networks:
   media-net:

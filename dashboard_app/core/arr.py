@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from urllib.request import Request, urlopen
 
-from .config import CONFIG_DIR, HTTP_TIMEOUT_SECONDS, QUEUE_LIMIT, RADARR_HOST, SONARR_HOST
+from .config import CONFIG_DIR, HTTP_TIMEOUT_SECONDS, QUEUE_LIMIT, RADARR_HOST, SABNZBD_HOST, SONARR_HOST
 from .utils import (
     bool_label,
     bytes_to_human,
@@ -14,6 +14,7 @@ from .utils import (
     normalize_records,
     parse_int,
     parse_iso_datetime,
+    read_ini_value,
     read_xml_value,
     summarize_arr_queue,
     summarize_diskspace,
@@ -106,6 +107,130 @@ def arr_delete_rootfolder(service_name: str, folder_id: int) -> dict:
         "ok": True,
         "service": service_name,
         "folderId": int(folder_id),
+    }
+
+
+def _arr_request_json(conf: dict, path: str, method: str = "GET", payload: dict | None = None):
+    headers = {"X-Api-Key": conf["api_key"]}
+    body = None
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+        body = json.dumps(payload).encode("utf-8")
+    request = Request(
+        f"{conf['base_url']}{path}",
+        data=body,
+        headers=headers,
+        method=method,
+    )
+    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+        response_payload = response.read().decode("utf-8")
+    if not response_payload:
+        return {}
+    try:
+        return json.loads(response_payload)
+    except json.JSONDecodeError:
+        return {}
+
+
+def _set_download_client_field(fields: list, name: str, value):
+    for field in fields:
+        if field.get("name") == name:
+            field["value"] = value
+            return
+    fields.append({"name": name, "value": value})
+
+
+def configure_arr_sab_download_client(service_name: str, category: str) -> dict:
+    if service_name not in {"radarr", "sonarr"}:
+        return {"ok": False, "error": f"Unsupported ARR service: {service_name}"}
+
+    conf = arr_service_config(service_name)
+    sab_config_file = CONFIG_DIR / "sabnzbd" / "sabnzbd.ini"
+    sab_api_key = read_ini_value(sab_config_file, "api_key")
+    sab_url_base = normalize_base_path(read_ini_value(sab_config_file, "url_base"))
+    sab_username = read_ini_value(sab_config_file, "username")
+    sab_password = read_ini_value(sab_config_file, "password")
+    if not sab_api_key:
+        return {"ok": False, "error": "SABnzbd API key not found in config"}
+
+    clients = _arr_request_json(conf, "/api/v3/downloadclient")
+    if not isinstance(clients, list):
+        clients = []
+    existing = next(
+        (
+            item
+            for item in clients
+            if str(item.get("implementation", "")).lower() == "sabnzbd"
+            or str(item.get("implementationName", "")).lower() == "sabnzbd"
+        ),
+        None,
+    )
+
+    payload = {}
+    mode = "create"
+    endpoint = "/api/v3/downloadclient"
+    method = "POST"
+    if existing:
+        payload = existing
+        mode = "update"
+        client_id = existing.get("id")
+        endpoint = f"/api/v3/downloadclient/{client_id}"
+        method = "PUT"
+    else:
+        schema = _arr_request_json(conf, "/api/v3/downloadclient/schema")
+        if not isinstance(schema, list):
+            schema = []
+        template = next((item for item in schema if item.get("implementation") == "Sabnzbd"), None)
+        if not template:
+            return {"ok": False, "error": "Could not find Sabnzbd schema in ARR"}
+        payload = {
+            "enable": bool(template.get("enable", True)),
+            "protocol": template.get("protocol", "usenet"),
+            "priority": int(template.get("priority", 1)),
+            "removeCompletedDownloads": bool(template.get("removeCompletedDownloads", True)),
+            "removeFailedDownloads": bool(template.get("removeFailedDownloads", True)),
+            "name": template.get("name") or "SABnzbd",
+            "fields": template.get("fields", []),
+            "implementationName": template.get("implementationName", "SABnzbd"),
+            "implementation": template.get("implementation", "Sabnzbd"),
+            "configContract": template.get("configContract", "SabnzbdSettings"),
+            "tags": template.get("tags", []),
+        }
+
+    payload["enable"] = True
+    payload["priority"] = 1
+    payload["removeCompletedDownloads"] = True
+    payload["removeFailedDownloads"] = True
+    payload["name"] = "SABnzbd"
+    payload["implementation"] = "Sabnzbd"
+    payload["implementationName"] = "SABnzbd"
+    payload["configContract"] = payload.get("configContract") or "SabnzbdSettings"
+    payload["fields"] = list(payload.get("fields") or [])
+
+    _set_download_client_field(payload["fields"], "host", SABNZBD_HOST or "localhost")
+    _set_download_client_field(payload["fields"], "port", 8080)
+    _set_download_client_field(payload["fields"], "useSsl", False)
+    _set_download_client_field(payload["fields"], "urlBase", sab_url_base)
+    _set_download_client_field(payload["fields"], "apiKey", sab_api_key)
+    _set_download_client_field(payload["fields"], "username", sab_username)
+    _set_download_client_field(payload["fields"], "password", sab_password)
+
+    if service_name == "radarr":
+        _set_download_client_field(payload["fields"], "movieCategory", category or "movies")
+        _set_download_client_field(payload["fields"], "recentMoviePriority", -100)
+        _set_download_client_field(payload["fields"], "olderMoviePriority", -100)
+    else:
+        _set_download_client_field(payload["fields"], "tvCategory", category or "tv")
+        _set_download_client_field(payload["fields"], "recentTvPriority", -100)
+        _set_download_client_field(payload["fields"], "olderTvPriority", -100)
+
+    response = _arr_request_json(conf, endpoint, method=method, payload=payload)
+    return {
+        "ok": True,
+        "service": service_name,
+        "mode": mode,
+        "endpoint": endpoint,
+        "result": response,
     }
 
 

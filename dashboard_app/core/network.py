@@ -11,6 +11,7 @@ from .config import (
     VPN_EXPECTED_IPS,
     VPN_ORG_KEYWORDS,
 )
+from .settings import get_runtime_vpn_settings
 from .utils import fetch_json
 
 
@@ -96,10 +97,22 @@ def lookup_ip_org(ip: str | None) -> str | None:
 
 
 def vpn_status_data() -> dict:
-    expected_ips = []
-    if VPN_EXPECTED_IP:
-        expected_ips.append(VPN_EXPECTED_IP)
-    expected_ips.extend(VPN_EXPECTED_IPS)
+    runtime_settings = get_runtime_vpn_settings()
+    if runtime_settings.get("useSavedValues"):
+        home_public_ip = runtime_settings.get("homePublicIp", "")
+        expected_ips = []
+        single_expected = runtime_settings.get("vpnExpectedIp", "")
+        if single_expected:
+            expected_ips.append(single_expected)
+        expected_ips.extend(runtime_settings.get("vpnExpectedIps", []))
+        org_keywords = runtime_settings.get("vpnOrgKeywords", [])
+    else:
+        home_public_ip = HOME_PUBLIC_IP
+        expected_ips = []
+        if VPN_EXPECTED_IP:
+            expected_ips.append(VPN_EXPECTED_IP)
+        expected_ips.extend(VPN_EXPECTED_IPS)
+        org_keywords = VPN_ORG_KEYWORDS
 
     host_ip_result = read_public_ip()
     host_ip = host_ip_result.get("ip")
@@ -124,16 +137,16 @@ def vpn_status_data() -> dict:
             if status == "on"
             else "Public IP does not match configured VPN endpoint"
         )
-    elif HOME_PUBLIC_IP:
-        status = "off" if current_ip == HOME_PUBLIC_IP else "on"
+    elif home_public_ip:
+        status = "off" if current_ip == home_public_ip else "on"
         reason = (
             "Public IP matches HOME_PUBLIC_IP baseline (likely VPN off)"
             if status == "off"
             else "Public IP differs from HOME_PUBLIC_IP baseline (likely VPN on)"
         )
-    elif VPN_ORG_KEYWORDS and current_org:
+    elif org_keywords and current_org:
         org_lower = current_org.lower()
-        matched = next((keyword for keyword in VPN_ORG_KEYWORDS if keyword in org_lower), None)
+        matched = next((keyword for keyword in org_keywords if keyword in org_lower), None)
         status = "on" if matched else "off"
         reason = (
             f"IP owner matches VPN_ORG_KEYWORDS ({matched})"
@@ -152,8 +165,8 @@ def vpn_status_data() -> dict:
         "vpnIp": vpn_ip,
         "vpnConnected": vpn_connected,
         "currentOrg": current_org_display,
-        "homeIp": HOME_PUBLIC_IP or None,
-        "vpnOrgKeywords": VPN_ORG_KEYWORDS,
+        "homeIp": home_public_ip or None,
+        "vpnOrgKeywords": org_keywords,
         "expectedIps": expected_ips,
         "provider": host_ip_result.get("provider"),
         "error": host_ip_result.get("error"),

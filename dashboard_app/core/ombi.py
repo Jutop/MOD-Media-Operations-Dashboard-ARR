@@ -1,5 +1,99 @@
-from .config import OMBI_HOST, OMBI_URL_BASE
-from .utils import fetch_json, fetch_json_optional, normalize_base_path, parse_int
+import json
+import sqlite3
+from urllib.request import Request, urlopen
+
+from .config import CONFIG_DIR, HTTP_TIMEOUT_SECONDS, OMBI_HOST, OMBI_URL_BASE
+from .utils import fetch_json, fetch_json_optional, normalize_base_path, parse_int, read_xml_value
+
+
+def _ombi_base_url() -> str:
+    url_base = normalize_base_path(OMBI_URL_BASE)
+    return f"http://{OMBI_HOST}:3579{url_base}"
+
+
+def _ombi_api_key_from_settings_db() -> str:
+    db_file = CONFIG_DIR / "ombi" / "OmbiSettings.db"
+    if not db_file.exists():
+        return ""
+    try:
+        con = sqlite3.connect(str(db_file))
+        cur = con.cursor()
+        row = cur.execute(
+            "SELECT Content FROM GlobalSettings WHERE SettingsName='OmbiSettings' LIMIT 1"
+        ).fetchone()
+        con.close()
+        if not row or not row[0]:
+            return ""
+        payload = json.loads(row[0])
+        return str(payload.get("ApiKey") or "").strip()
+    except (OSError, ValueError, sqlite3.DatabaseError, json.JSONDecodeError):
+        return ""
+
+
+def _ombi_request(path: str, api_key: str, method: str = "GET", payload: dict | None = None):
+    headers = {"ApiKey": api_key}
+    body = None
+    if payload is not None:
+        headers["Content-Type"] = "application/json"
+        body = json.dumps(payload).encode("utf-8")
+    request = Request(f"{_ombi_base_url()}{path}", data=body, headers=headers, method=method)
+    with urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
+        response_payload = response.read().decode("utf-8")
+    if not response_payload:
+        return {}
+    try:
+        return json.loads(response_payload)
+    except json.JSONDecodeError:
+        return {"raw": response_payload}
+
+
+def configure_ombi_arr_integrations(
+    radarr_api_key: str,
+    sonarr_api_key: str,
+    radarr_root_path: str,
+) -> dict:
+    ombi_api_key = _ombi_api_key_from_settings_db()
+    if not ombi_api_key:
+        return {"ok": False, "error": "Ombi API key not found in settings database"}
+
+    radarr_url_base = normalize_base_path(read_xml_value(CONFIG_DIR / "radarr" / "config.xml", "UrlBase", ""))
+    sonarr_url_base = normalize_base_path(read_xml_value(CONFIG_DIR / "sonarr" / "config.xml", "UrlBase", ""))
+
+    sonarr_settings = _ombi_request("/api/v1/Settings/sonarr", ombi_api_key)
+    if not isinstance(sonarr_settings, dict):
+        return {"ok": False, "error": "Ombi Sonarr settings payload is invalid"}
+    sonarr_settings["enabled"] = True
+    sonarr_settings["apiKey"] = sonarr_api_key
+    sonarr_settings["ip"] = "localhost"
+    sonarr_settings["port"] = 8989
+    sonarr_settings["ssl"] = False
+    sonarr_settings["subDir"] = sonarr_url_base
+    sonarr_result = _ombi_request("/api/v1/Settings/sonarr", ombi_api_key, method="POST", payload=sonarr_settings)
+
+    radarr_bundle = _ombi_request("/api/v1/Settings/radarr", ombi_api_key)
+    if not isinstance(radarr_bundle, dict):
+        return {"ok": False, "error": "Ombi Radarr settings payload is invalid"}
+    radarr_settings = dict(radarr_bundle.get("radarr") or {})
+    if not radarr_settings:
+        return {"ok": False, "error": "Ombi Radarr settings object missing"}
+    radarr_settings["enabled"] = True
+    radarr_settings["apiKey"] = radarr_api_key
+    radarr_settings["ip"] = "localhost"
+    radarr_settings["port"] = 7878
+    radarr_settings["ssl"] = False
+    radarr_settings["subDir"] = radarr_url_base
+    radarr_settings["defaultRootPath"] = radarr_root_path
+    radarr_bundle["radarr"] = radarr_settings
+    radarr_result = _ombi_request("/api/v1/Settings/radarr", ombi_api_key, method="POST", payload=radarr_bundle)
+
+    return {
+        "ok": True,
+        "ombiApiKeyFound": True,
+        "sonarr": sonarr_result,
+        "radarr": radarr_result,
+    }
+
+
 def ombi_data() -> dict:
     url_base = normalize_base_path(OMBI_URL_BASE)
     base_url = f"http://{OMBI_HOST}:3579{url_base}"

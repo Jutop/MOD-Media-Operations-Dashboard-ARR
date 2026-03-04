@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOD Settings</title>
+  <link rel="stylesheet" href="./settings.css">
+</head>
+<body>
+  <main class="settings-shell">
+    <header class="settings-header">
+      <img src="./images/MOD_logo.png" alt="MOD logo">
+      <h1>Settings</h1>
+      <p>Update paths, app integrations, and VPN heuristics at any time.</p>
+      <a class="back-link" href="/">Back to Dashboard</a>
+    </header>
+
+    <section class="settings-card">
+      <form id="settingsForm" novalidate>
+        <div class="grid two">
+          <label>
+            <span>Language</span>
+            <select id="language" name="language">
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </label>
+        </div>
+
+        <h2>Base Path</h2>
+        <div class="grid">
+          <label>
+            <span>Media Base Path (forwarded root)</span>
+            <input id="mediaBasePath" name="mediaBasePath" type="text" required placeholder="/media">
+          </label>
+        </div>
+        <label class="toggle-line">
+          <input id="useBasePathDefaults" name="useBasePathDefaults" type="checkbox" checked>
+          <span>Auto-derive Radarr/Sonarr/SAB paths from Media Base Path</span>
+        </label>
+
+        <h2>Media Paths</h2>
+        <div class="grid">
+          <label>
+            <span>Radarr Root Path</span>
+            <input id="radarrRootPath" name="radarrRootPath" type="text" required placeholder="/media/movies">
+          </label>
+          <label>
+            <span>Sonarr Root Path</span>
+            <input id="sonarrRootPath" name="sonarrRootPath" type="text" required placeholder="/media/tv">
+          </label>
+          <label>
+            <span>SAB Download Dir (incomplete)</span>
+            <input id="sabDownloadDir" name="sabDownloadDir" type="text" required placeholder="/media/downloads/incomplete">
+          </label>
+          <label>
+            <span>SAB Complete Dir</span>
+            <input id="sabCompleteDir" name="sabCompleteDir" type="text" required placeholder="/media/downloads/complete">
+          </label>
+        </div>
+
+        <h2>App Auto-Connect</h2>
+        <label class="toggle-line">
+          <input id="autoConfigureAppLinks" name="autoConfigureAppLinks" type="checkbox" checked>
+          <span>Auto-connect Radarr/Sonarr to SABnzbd and configure Ombi links</span>
+        </label>
+        <div class="grid">
+          <label>
+            <span>Radarr SAB Category</span>
+            <input id="radarrSabCategory" name="radarrSabCategory" type="text" placeholder="movies">
+          </label>
+          <label>
+            <span>Sonarr SAB Category</span>
+            <input id="sonarrSabCategory" name="sonarrSabCategory" type="text" placeholder="tv">
+          </label>
+        </div>
+
+        <h2>VPN Heuristics (optional)</h2>
+        <div class="grid">
+          <label>
+            <span>HOME_PUBLIC_IP</span>
+            <input id="homePublicIp" name="homePublicIp" type="text" placeholder="203.0.113.10">
+          </label>
+          <label>
+            <span>VPN_EXPECTED_IP</span>
+            <input id="vpnExpectedIp" name="vpnExpectedIp" type="text" placeholder="198.51.100.25">
+          </label>
+          <label>
+            <span>VPN_EXPECTED_IPS (comma separated)</span>
+            <input id="vpnExpectedIps" name="vpnExpectedIps" type="text" placeholder="198.51.100.25, 198.51.100.26">
+          </label>
+          <label>
+            <span>VPN_ORG_KEYWORDS (comma separated)</span>
+            <input id="vpnOrgKeywords" name="vpnOrgKeywords" type="text" placeholder="m247,vpn,datacamp">
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="saveSettingsButton" type="submit">Save Settings</button>
+        </div>
+      </form>
+
+      <div id="settingsMessage" class="message hidden"></div>
+      <pre id="settingsDetails" class="details hidden"></pre>
+    </section>
+  </main>
+
+  <script src="./settings.js"></script>
+</body>
+</html>

@@ -142,6 +142,7 @@ const I18N = {
 
     "action.add": "Add",
     "action.saveSabPaths": "Save SAB Paths",
+    "action.settings": "Settings",
     "action.openAllTabs": "Open All Tabs",
     "action.start": "start",
     "action.stop": "stop",
@@ -307,6 +308,7 @@ const I18N = {
 
     "action.add": "Hinzuf\u00fcgen",
     "action.saveSabPaths": "SAB-Pfade speichern",
+    "action.settings": "Einstellungen",
     "action.openAllTabs": "Alle Tabs \u00f6ffnen",
     "action.start": "starten",
     "action.stop": "stoppen",
@@ -722,6 +724,41 @@ function renderSummary(dashboard) {
   ids.sumIssues.textContent = asNum(summary.serviceIssues);
 }
 
+function ensureQuickLink(id, label, iconSrc, iconAlt) {
+  let link = document.getElementById(id);
+  if (link) {
+    return link;
+  }
+
+  const quickLinks = document.querySelector(".quick-links");
+  if (!quickLinks) {
+    return null;
+  }
+
+  link = document.createElement("a");
+  link.id = id;
+  link.href = "#";
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+
+  const img = document.createElement("img");
+  img.src = iconSrc;
+  img.alt = iconAlt;
+
+  const text = document.createElement("span");
+  text.textContent = label;
+
+  link.append(img, text);
+
+  const openAll = document.getElementById("openAllApps");
+  if (openAll && openAll.parentElement === quickLinks) {
+    quickLinks.insertBefore(link, openAll);
+  } else {
+    quickLinks.appendChild(link);
+  }
+  return link;
+}
+
 function renderVpn(dashboard) {
   const network = dashboard.network || {};
   const services = dashboard.services || {};
@@ -739,12 +776,26 @@ function renderVpn(dashboard) {
   ids.vpnTunnelIp.textContent = `${t("vpn.tunnelPrefix")} ${asText(network.vpnIp)}`;
   ids.vpnProvider.textContent = asText(network.provider, t("status.unavailable"));
 
-  ids.openRadarr.href = services.radarr?.url || "#";
-  ids.openSonarr.href = services.sonarr?.url || "#";
-  ids.openSab.href = services.sabnzbd?.url || "#";
-  ids.openOmbi.href = services.ombi?.url || "#";
+  const openRadarr = ensureQuickLink("openRadarr", "Radarr", "./images/radar_logo.png", "Radarr");
+  const openSonarr = ensureQuickLink("openSonarr", "Sonarr", "./images/sonarr_logo.png", "Sonarr");
+  const openSab = ensureQuickLink("openSab", "SABnzbd", "./images/sab_logo.png", "SABnzbd");
+  const openOmbi = ensureQuickLink("openOmbi", "Ombi", "./images/ombi.png", "Ombi");
+
+  if (openRadarr) {
+    openRadarr.href = services.radarr?.url || "#";
+  }
+  if (openSonarr) {
+    openSonarr.href = services.sonarr?.url || "#";
+  }
+  if (openSab) {
+    openSab.href = services.sabnzbd?.url || "#";
+  }
+  if (openOmbi) {
+    openOmbi.href = services.ombi?.url || "#";
+  }
+
   if (ids.openAllApps) {
-    const openableCount = [ids.openRadarr.href, ids.openSonarr.href, ids.openSab.href, ids.openOmbi.href]
+    const openableCount = [openRadarr?.href, openSonarr?.href, openSab?.href, openOmbi?.href]
       .filter((url) => url && url !== "#").length;
     ids.openAllApps.disabled = openableCount === 0;
   }
@@ -1181,7 +1232,11 @@ ids.sabPathsForm.addEventListener("submit", (event) => {
 
 if (ids.openAllApps) {
   ids.openAllApps.addEventListener("click", () => {
-    const targets = [ids.openRadarr?.href, ids.openSonarr?.href, ids.openSab?.href, ids.openOmbi?.href]
+    const openRadarr = document.getElementById("openRadarr");
+    const openSonarr = document.getElementById("openSonarr");
+    const openSab = document.getElementById("openSab");
+    const openOmbi = document.getElementById("openOmbi");
+    const targets = [openRadarr?.href, openSonarr?.href, openSab?.href, openOmbi?.href]
       .filter((url) => url && url !== "#");
     if (targets.length === 0) {
       showToast(t("toast.noServiceTabs"), true);
