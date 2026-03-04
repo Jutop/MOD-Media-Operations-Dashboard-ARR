@@ -35,15 +35,6 @@ Web dashboard to monitor and operate a VPN-routed ARR stack:
 ### `v1.0.0` - 2026-03-01
 - Initial release of MOD (Media Operations Dashboard ARR stack).
 
-## Versioning & Releases
-- Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
-- `PATCH`: bug fixes, small non-breaking improvements.
-- `MINOR`: new backward-compatible features.
-- `MAJOR`: breaking changes or migrations.
-- For each release:
-  1. Move the relevant items from `Unreleased` to a new version section with date.
-  2. Create a git tag like `v1.2.0`.
-  3. Publish a GitHub Release with the same notes.
 
 ## Quick Start
 
