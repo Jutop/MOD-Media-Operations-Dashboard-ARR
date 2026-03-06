@@ -7,8 +7,6 @@ from urllib.parse import unquote
 
 from .config import IMAGES_DIR, STATIC_DIR
 from .integrations import (
-    arr_add_rootfolder,
-    arr_delete_rootfolder,
     build_admin_payload,
     build_dashboard_payload,
     build_sab_payload,
@@ -136,34 +134,6 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 result = perform_container_action(service_name, action)
                 status_code = 200 if result.get("ok") else 400
                 self._send_json(result, status_code=status_code)
-                return
-
-            if path == "/api/manage/rootfolders":
-                service_name = str(payload.get("service") or "").strip().lower()
-                action = str(payload.get("action") or "add").strip().lower()
-                if service_name not in {"radarr", "sonarr"}:
-                    self._send_json({"ok": False, "error": "Service must be 'radarr' or 'sonarr'"}, status_code=400)
-                    return
-
-                if action == "add":
-                    folder_path = str(payload.get("path") or "").strip()
-                    if not folder_path:
-                        self._send_json({"ok": False, "error": "Missing 'path' for add action"}, status_code=400)
-                        return
-                    result = arr_add_rootfolder(service_name, folder_path)
-                    self._send_json(result, status_code=200)
-                    return
-
-                if action == "delete":
-                    folder_id = payload.get("id")
-                    if folder_id is None:
-                        self._send_json({"ok": False, "error": "Missing 'id' for delete action"}, status_code=400)
-                        return
-                    result = arr_delete_rootfolder(service_name, int(folder_id))
-                    self._send_json(result, status_code=200)
-                    return
-
-                self._send_json({"ok": False, "error": "Action must be 'add' or 'delete'"}, status_code=400)
                 return
 
             if path == "/api/manage/sab-paths":

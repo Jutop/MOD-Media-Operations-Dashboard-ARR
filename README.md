@@ -20,7 +20,7 @@ Web dashboard to monitor and operate a VPN-routed ARR stack:
 ## Update Feed (Newest First)
 
 ### Unreleased
-- No pending changes yet.
+- Removed the legacy LAN sync sidecar and related settings.
 
 ### `v1.2.0` - 2026-03-04
 - Replaced first-run onboarding lock with an always-available `/settings` page.
@@ -77,19 +77,16 @@ docker compose up -d --build
 - Settings URL: `http://localhost:8090/settings`
 
 ### 5) Configure Web Settings (Any Time)
-- Open `/settings` and set `Media Base Path` (default `/media`) to derive:
-  - Radarr root folder (`/media/movies`)
-  - Sonarr root folder (`/media/tv`)
-  - SAB incomplete + complete directories
-- Optional: disable base-path derivation and provide custom paths.
+- Open `/settings` and set `Media Base Path` (default `/media`) to derive SAB incomplete + complete directories.
+- Optional: disable base-path derivation and provide custom SAB paths.
 - Auto-connect actions (enabled by default):
   - Configure Radarr/Sonarr SABnzbd download clients
   - Configure Ombi Radarr/Sonarr integration endpoints
 - Optional: set VPN heuristics (`HOME_PUBLIC_IP`, expected IPs, org keywords).
 - Save settings to apply changes immediately.
 
-### 5.1) Change Root/Download Folders To A Custom PC Path
-Important: the settings page writes container paths (for example `/media/movies`), not raw Windows host paths.
+### 5.1) Change Download Folders To A Custom PC Path
+Important: the settings page writes container paths (for example `/media/Movies`), not raw Windows host paths.
 
 If you want a different host folder (for example `D:/MediaLibrary`), update Docker bind mounts in `docker-compose.yml` first so containers can access it.
 
@@ -104,7 +101,7 @@ After editing bind mounts:
    ```bash
    docker compose up -d --build
    ```
-2. Open `/settings` and save the desired container paths (for example `/media/movies`, `/media/tv`, `/media/downloads/...`).
+2. Open `/settings` and save the desired container paths (for example `/media/Movies`, `/media/tv`, `/media/downloads/...`).
 
 ### 6) What Is Still Manual
 The settings page automates paths and core app-to-app links, but these items still need manual setup:
@@ -114,7 +111,7 @@ The settings page automates paths and core app-to-app links, but these items sti
 
 After saving settings, quickly verify in each app UI that:
 - SAB category mapping is correct (`movies` for Radarr, `tv` for Sonarr by default).
-- Root folders are present and writable.
+- Radarr/Sonarr root folders are configured directly in the Radarr/Sonarr app UIs.
 - Test downloads/imports work end-to-end.
 
 ## Important Notes

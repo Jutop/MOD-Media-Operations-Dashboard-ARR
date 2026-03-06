@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 
-from .arr import arr_add_rootfolder, arr_delete_rootfolder, arr_rootfolders_data, radarr_data, sonarr_data
+from .arr import radarr_data, sonarr_data
 from .containers import container_states, perform_container_action
 from .network import vpn_status_data
 from .ombi import ombi_data
@@ -96,8 +96,6 @@ def build_admin_payload() -> dict:
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "containers": container_states(),
         "settings": {
-            "radarr": service_result_light(lambda: arr_rootfolders_data("radarr")),
-            "sonarr": service_result_light(lambda: arr_rootfolders_data("sonarr")),
             "sabnzbd": service_result_light(sab_paths_data),
         },
     }

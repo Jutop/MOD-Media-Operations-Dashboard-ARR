@@ -25,30 +25,30 @@
               <option value="de">Deutsch</option>
             </select>
           </label>
+          <label>
+            <span>Theme</span>
+            <select id="theme" name="theme">
+              <option value="classic">Classic MOD</option>
+              <option value="black">Black</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
         </div>
 
         <h2>Base Path</h2>
         <div class="grid">
           <label>
-            <span>Media Base Path (forwarded root)</span>
+            <span>Media Base Path (used for SAB defaults)</span>
             <input id="mediaBasePath" name="mediaBasePath" type="text" required placeholder="/media">
           </label>
         </div>
         <label class="toggle-line">
           <input id="useBasePathDefaults" name="useBasePathDefaults" type="checkbox" checked>
-          <span>Auto-derive Radarr/Sonarr/SAB paths from Media Base Path</span>
+          <span>Auto-derive SAB paths from Media Base Path</span>
         </label>
 
         <h2>Media Paths</h2>
         <div class="grid">
-          <label>
-            <span>Radarr Root Path</span>
-            <input id="radarrRootPath" name="radarrRootPath" type="text" required placeholder="/media/movies">
-          </label>
-          <label>
-            <span>Sonarr Root Path</span>
-            <input id="sonarrRootPath" name="sonarrRootPath" type="text" required placeholder="/media/tv">
-          </label>
           <label>
             <span>SAB Download Dir (incomplete)</span>
             <input id="sabDownloadDir" name="sabDownloadDir" type="text" required placeholder="/media/downloads/incomplete">

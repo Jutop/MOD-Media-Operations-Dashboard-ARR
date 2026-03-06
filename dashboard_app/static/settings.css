@@ -1,12 +1,70 @@
 :root {
   --bg0: #070d1f;
   --bg1: #0f1f3b;
+  --bg2: #1c3d6d;
   --line: rgba(134, 185, 233, 0.28);
   --text: #e7f5ff;
   --muted: #9eb8cc;
+  --surface: rgba(8, 17, 34, 0.86);
+  --surface-soft: rgba(8, 16, 34, 0.7);
+  --field-bg: rgba(10, 24, 43, 0.9);
+  --field-border: rgba(132, 178, 211, 0.4);
+  --button-border: rgba(139, 218, 255, 0.65);
+  --button-a: #1b84c1;
+  --button-b: #2f6ddb;
+  --button-text: #e9f7ff;
+  --link-border: rgba(139, 218, 255, 0.5);
+  --link-bg: rgba(15, 37, 62, 0.8);
+  --link-text: #dff4ff;
+  --link-border-hover: rgba(170, 230, 255, 0.75);
+  --link-bg-hover: rgba(20, 50, 82, 0.9);
   --accent: #38c8ff;
   --ok: #2fd29b;
   --bad: #ff6a78;
+}
+
+:root[data-theme="black"] {
+  --bg0: #020304;
+  --bg1: #0b0d10;
+  --bg2: #15191f;
+  --line: rgba(176, 184, 194, 0.28);
+  --text: #f0f3f7;
+  --muted: #aeb7c2;
+  --surface: rgba(12, 15, 20, 0.92);
+  --surface-soft: rgba(15, 18, 24, 0.86);
+  --field-bg: rgba(19, 24, 31, 0.92);
+  --field-border: rgba(170, 178, 188, 0.35);
+  --button-border: rgba(188, 197, 206, 0.52);
+  --button-a: #4b5969;
+  --button-b: #2e3845;
+  --button-text: #f2f5f8;
+  --link-border: rgba(190, 198, 208, 0.44);
+  --link-bg: rgba(17, 21, 27, 0.84);
+  --link-text: #eef2f6;
+  --link-border-hover: rgba(206, 214, 224, 0.68);
+  --link-bg-hover: rgba(30, 36, 45, 0.9);
+}
+
+:root[data-theme="light"] {
+  --bg0: #edf3fb;
+  --bg1: #dce8f8;
+  --bg2: #7aa7d6;
+  --line: rgba(91, 124, 164, 0.34);
+  --text: #14263b;
+  --muted: #4f6680;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-soft: rgba(248, 252, 255, 0.92);
+  --field-bg: rgba(255, 255, 255, 0.96);
+  --field-border: rgba(93, 130, 173, 0.44);
+  --button-border: rgba(70, 115, 165, 0.52);
+  --button-a: #2d8ac5;
+  --button-b: #4c67d4;
+  --button-text: #f3f9ff;
+  --link-border: rgba(76, 119, 168, 0.48);
+  --link-bg: rgba(244, 249, 255, 0.96);
+  --link-text: #173450;
+  --link-border-hover: rgba(63, 105, 153, 0.68);
+  --link-bg-hover: rgba(232, 242, 252, 0.98);
 }
 
 * {
@@ -19,7 +77,7 @@ body {
   min-height: 100%;
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
-  background: radial-gradient(1000px 700px at -10% -10%, #1c3d6d 0%, transparent 60%),
+  background: radial-gradient(1000px 700px at -10% -10%, var(--bg2) 0%, transparent 60%),
     linear-gradient(140deg, var(--bg0), var(--bg1));
 }
 
@@ -39,7 +97,7 @@ body {
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: rgba(8, 16, 34, 0.7);
+  background: var(--surface-soft);
 }
 
 .settings-header h1 {
@@ -56,25 +114,25 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(139, 218, 255, 0.5);
+  border: 1px solid var(--link-border);
   border-radius: 999px;
   padding: 6px 12px;
-  color: #dff4ff;
+  color: var(--link-text);
   text-decoration: none;
   font-size: 0.8rem;
   font-weight: 600;
-  background: rgba(15, 37, 62, 0.8);
+  background: var(--link-bg);
 }
 
 .back-link:hover {
-  border-color: rgba(170, 230, 255, 0.75);
-  background: rgba(20, 50, 82, 0.9);
+  border-color: var(--link-border-hover);
+  background: var(--link-bg-hover);
 }
 
 .settings-card {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(8, 17, 34, 0.86);
+  background: var(--surface);
   padding: 14px;
 }
 
@@ -90,7 +148,7 @@ h2 {
 }
 
 .grid.two {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 label {
@@ -111,21 +169,27 @@ label {
 }
 
 .toggle-line span {
-  color: #a7c9df;
+  color: var(--muted);
   font-size: 0.82rem;
+}
+
+.field-note {
+  margin: 6px 0 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 label span {
   font-size: 0.8rem;
-  color: #98c8e6;
+  color: var(--muted);
 }
 
 input,
 select {
   width: 100%;
-  border: 1px solid rgba(132, 178, 211, 0.4);
+  border: 1px solid var(--field-border);
   border-radius: 8px;
-  background: rgba(10, 24, 43, 0.9);
+  background: var(--field-bg);
   color: var(--text);
   padding: 8px 9px;
   font-size: 0.85rem;
@@ -138,10 +202,10 @@ select {
 }
 
 button {
-  border: 1px solid rgba(139, 218, 255, 0.65);
+  border: 1px solid var(--button-border);
   border-radius: 8px;
-  background: linear-gradient(120deg, #1b84c1, #2f6ddb);
-  color: #e9f7ff;
+  background: linear-gradient(120deg, var(--button-a), var(--button-b));
+  color: var(--button-text);
   padding: 9px 14px;
   font-size: 0.85rem;
   font-weight: 700;

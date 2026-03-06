@@ -9,7 +9,7 @@ services:
       - ./backups:/workspace/backups
     command: >
       /bin/sh -ec "
-      mkdir -p /workspace/config/sabnzbd /workspace/config/sonarr /workspace/config/radarr /workspace/config/ombi /workspace/media/downloads/incomplete /workspace/media/downloads/complete /workspace/media/movies /workspace/media/tv /workspace/backups;
+      mkdir -p /workspace/config/sabnzbd /workspace/config/sonarr /workspace/config/radarr /workspace/config/ombi /workspace/media/downloads/incomplete /workspace/media/downloads/complete /workspace/media/Movies /workspace/media/tv /workspace/backups;
       echo 'init: required folders are ready';
       "
     restart: "no"

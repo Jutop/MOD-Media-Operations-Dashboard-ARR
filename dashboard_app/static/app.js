@@ -3,7 +3,9 @@ const ADMIN_REFRESH_MS = 15000;
 const SAB_REFRESH_MS = 1000;
 const SAB_LIVE_LIMIT = 5;
 const LANG_STORAGE_KEY = "dashboard_language";
+const THEME_STORAGE_KEY = "dashboard_theme";
 const SUPPORTED_LANGUAGES = ["en", "de"];
+const SUPPORTED_THEMES = ["classic", "black", "light"];
 
 const ids = {
   languageSelect: document.getElementById("languageSelect"),
@@ -29,12 +31,6 @@ const ids = {
   openOmbi: document.getElementById("openOmbi"),
   openAllApps: document.getElementById("openAllApps"),
   containerRows: document.getElementById("containerRows"),
-  radarrRootList: document.getElementById("radarrRootList"),
-  sonarrRootList: document.getElementById("sonarrRootList"),
-  radarrRootForm: document.getElementById("radarrRootForm"),
-  sonarrRootForm: document.getElementById("sonarrRootForm"),
-  radarrRootInput: document.getElementById("radarrRootInput"),
-  sonarrRootInput: document.getElementById("sonarrRootInput"),
   sabPathsForm: document.getElementById("sabPathsForm"),
   sabDownloadDirInput: document.getElementById("sabDownloadDirInput"),
   sabCompleteDirInput: document.getElementById("sabCompleteDirInput"),
@@ -62,12 +58,18 @@ const ids = {
   ombiEssential: document.getElementById("ombiEssential")
 };
 
+const themeOptions = Array.from(document.querySelectorAll("[data-theme-choice]"));
+
 const I18N = {
   en: {
     "ui.title": "Media Ops Bridge",
     "ui.language": "Language",
+    "ui.theme": "Theme",
     "lang.en": "English",
     "lang.de": "Deutsch",
+    "theme.classic": "Classic MOD",
+    "theme.black": "Black",
+    "theme.light": "Light",
     "status.waiting": "Waiting for refresh...",
     "status.updated": "Updated {time}",
     "status.live": "live",
@@ -108,7 +110,7 @@ const I18N = {
     "table.health": "Health",
     "table.actions": "Actions",
 
-    "placeholder.radarrRoot": "/media/movies",
+    "placeholder.radarrRoot": "/media/Movies",
     "placeholder.sonarrRoot": "/media/tv",
     "placeholder.sabIncomplete": "/media/downloads/incomplete",
     "placeholder.sabComplete": "/media/downloads/complete",
@@ -232,8 +234,12 @@ const I18N = {
   de: {
     "ui.title": "Media Ops Bridge",
     "ui.language": "Sprache",
+    "ui.theme": "Design",
     "lang.en": "Englisch",
     "lang.de": "Deutsch",
+    "theme.classic": "Klassisch MOD",
+    "theme.black": "Schwarz",
+    "theme.light": "Hell",
     "status.waiting": "Warte auf Aktualisierung...",
     "status.updated": "Aktualisiert {time}",
     "status.live": "live",
@@ -274,7 +280,7 @@ const I18N = {
     "table.health": "Zustand",
     "table.actions": "Aktionen",
 
-    "placeholder.radarrRoot": "/media/movies",
+    "placeholder.radarrRoot": "/media/Movies",
     "placeholder.sonarrRoot": "/media/tv",
     "placeholder.sabIncomplete": "/media/downloads/incomplete",
     "placeholder.sabComplete": "/media/downloads/complete",
@@ -401,7 +407,8 @@ const state = {
   dashboard: null,
   admin: null,
   actionInFlight: false,
-  language: detectInitialLanguage()
+  language: detectInitialLanguage(),
+  theme: detectInitialTheme()
 };
 
 function normalizeLanguage(value) {
@@ -422,6 +429,26 @@ function detectInitialLanguage() {
     // localStorage can be blocked by browser policies; fallback below.
   }
   return normalizeLanguage(navigator.language);
+}
+
+function normalizeTheme(value) {
+  if (!value) {
+    return "classic";
+  }
+  const next = String(value).toLowerCase().trim();
+  return SUPPORTED_THEMES.includes(next) ? next : "classic";
+}
+
+function detectInitialTheme() {
+  try {
+    const rawSaved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (rawSaved) {
+      return normalizeTheme(rawSaved);
+    }
+  } catch (_error) {
+    // localStorage can be blocked by browser policies; fallback below.
+  }
+  return "classic";
 }
 
 function currentLocale() {
@@ -476,6 +503,26 @@ function setLanguage(language, persist = true) {
   }
   if (state.admin) {
     renderAdmin(state.admin);
+  }
+}
+
+function setTheme(theme, persist = true) {
+  const next = normalizeTheme(theme);
+  state.theme = next;
+  document.documentElement.dataset.theme = next;
+
+  themeOptions.forEach((button) => {
+    const isActive = button.dataset.themeChoice === next;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  if (persist) {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch (_error) {
+      // Ignore storage write failures.
+    }
   }
 }
 
@@ -1046,61 +1093,9 @@ function renderContainerControls(admin) {
   });
 }
 
-function renderRootFolderList(node, serviceName, payload) {
-  clearNode(node);
-
-  if (!payload?.online) {
-    const chip = document.createElement("div");
-    chip.className = "chip";
-    const text = document.createElement("span");
-    text.textContent = t("root.unavailable", { reason: asText(payload?.error, t("status.offline").toLowerCase()) });
-    chip.appendChild(text);
-    node.appendChild(chip);
-    return;
-  }
-
-  const folders = payload.folders || [];
-  if (folders.length === 0) {
-    const chip = document.createElement("div");
-    chip.className = "chip";
-    const text = document.createElement("span");
-    text.textContent = t("root.none");
-    chip.appendChild(text);
-    node.appendChild(chip);
-    return;
-  }
-
-  folders.forEach((folder) => {
-    const chip = document.createElement("div");
-    chip.className = "chip";
-
-    const text = document.createElement("span");
-    text.textContent = t("root.entry", {
-      path: asText(folder.path),
-      free: asText(folder.freeSpace)
-    });
-
-    const del = document.createElement("button");
-    del.type = "button";
-    del.textContent = t("action.remove");
-    del.dataset.deleteRoot = "1";
-    del.dataset.service = serviceName;
-    del.dataset.id = String(folder.id);
-    del.disabled = state.actionInFlight;
-
-    chip.append(text, del);
-    node.appendChild(chip);
-  });
-}
-
 function renderAdmin(admin) {
   renderContainerControls(admin);
-
-  const settings = admin?.settings || {};
-  renderRootFolderList(ids.radarrRootList, "radarr", settings.radarr);
-  renderRootFolderList(ids.sonarrRootList, "sonarr", settings.sonarr);
-
-  const sab = settings.sabnzbd;
+  const sab = admin?.settings?.sabnzbd;
   if (sab?.online) {
     const paths = sab.paths || {};
     ids.sabDownloadDirInput.value = asText(paths.downloadDir, "");
@@ -1172,53 +1167,6 @@ ids.containerRows.addEventListener("click", (event) => {
   );
 });
 
-function bindRootDelete(container) {
-  container.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-delete-root='1']");
-    if (!button) {
-      return;
-    }
-    const serviceName = button.dataset.service;
-    const id = Number(button.dataset.id);
-
-    withAction(
-      () => apiPost("/api/manage/rootfolders", { service: serviceName, action: "delete", id }),
-      t("container.rootRemoved", { service: serviceName })
-    );
-  });
-}
-
-bindRootDelete(ids.radarrRootList);
-bindRootDelete(ids.sonarrRootList);
-
-ids.radarrRootForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const path = ids.radarrRootInput.value.trim();
-  if (!path) {
-    return;
-  }
-  withAction(
-    () => apiPost("/api/manage/rootfolders", { service: "radarr", action: "add", path }),
-    t("toast.radarrRootAdded")
-  ).then(() => {
-    ids.radarrRootInput.value = "";
-  });
-});
-
-ids.sonarrRootForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const path = ids.sonarrRootInput.value.trim();
-  if (!path) {
-    return;
-  }
-  withAction(
-    () => apiPost("/api/manage/rootfolders", { service: "sonarr", action: "add", path }),
-    t("toast.sonarrRootAdded")
-  ).then(() => {
-    ids.sonarrRootInput.value = "";
-  });
-});
-
 ids.sabPathsForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const downloadDir = ids.sabDownloadDirInput.value.trim();
@@ -1284,6 +1232,9 @@ function bindSilentExternalLinks() {
 
 async function bootstrap() {
   try {
+    const settingsStatus = await apiGet("/api/settings");
+    setLanguage(settingsStatus.settings?.language || state.language, true);
+    setTheme(settingsStatus.settings?.theme || state.theme, true);
     await Promise.all([refreshDashboard(), refreshAdmin()]);
     await refreshSabLive();
   } catch (error) {
@@ -1311,5 +1262,12 @@ if (ids.languageSelect) {
   });
 }
 
+themeOptions.forEach((button) => {
+  button.addEventListener("click", () => {
+    setTheme(button.dataset.themeChoice, true);
+  });
+});
+
 setLanguage(state.language, false);
+setTheme(state.theme, false);
 bootstrap();

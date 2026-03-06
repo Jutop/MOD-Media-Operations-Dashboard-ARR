@@ -1,13 +1,15 @@
+const THEME_STORAGE_KEY = "dashboard_theme";
+const SUPPORTED_THEMES = ["classic", "black", "light"];
+
 const ids = {
   form: document.getElementById("settingsForm"),
   submit: document.getElementById("saveSettingsButton"),
   message: document.getElementById("settingsMessage"),
   details: document.getElementById("settingsDetails"),
   language: document.getElementById("language"),
+  theme: document.getElementById("theme"),
   mediaBasePath: document.getElementById("mediaBasePath"),
   useBasePathDefaults: document.getElementById("useBasePathDefaults"),
-  radarrRootPath: document.getElementById("radarrRootPath"),
-  sonarrRootPath: document.getElementById("sonarrRootPath"),
   sabDownloadDir: document.getElementById("sabDownloadDir"),
   sabCompleteDir: document.getElementById("sabCompleteDir"),
   autoConfigureAppLinks: document.getElementById("autoConfigureAppLinks"),
@@ -18,6 +20,41 @@ const ids = {
   vpnExpectedIps: document.getElementById("vpnExpectedIps"),
   vpnOrgKeywords: document.getElementById("vpnOrgKeywords"),
 };
+
+function normalizeTheme(value) {
+  if (!value) {
+    return "classic";
+  }
+  const next = String(value).toLowerCase().trim();
+  return SUPPORTED_THEMES.includes(next) ? next : "classic";
+}
+
+function detectInitialTheme() {
+  try {
+    const rawSaved = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (rawSaved) {
+      return normalizeTheme(rawSaved);
+    }
+  } catch (_error) {
+    // Ignore blocked storage and use fallback below.
+  }
+  return "classic";
+}
+
+function setTheme(theme, persist = true) {
+  const next = normalizeTheme(theme);
+  document.documentElement.dataset.theme = next;
+  if (ids.theme && ids.theme.value !== next) {
+    ids.theme.value = next;
+  }
+  if (persist) {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch (_error) {
+      // Ignore write failures.
+    }
+  }
+}
 
 function asText(value) {
   return String(value ?? "").trim();
@@ -42,8 +79,6 @@ function applyBasePathDefaults() {
   if (!base || !base.startsWith("/")) {
     return;
   }
-  ids.radarrRootPath.value = `${base}/movies`;
-  ids.sonarrRootPath.value = `${base}/tv`;
   ids.sabDownloadDir.value = `${base}/downloads/incomplete`;
   ids.sabCompleteDir.value = `${base}/downloads/complete`;
 }
@@ -86,10 +121,9 @@ async function apiPost(path, payload) {
 function collectPayload() {
   return {
     language: asText(ids.language.value) || "en",
+    theme: normalizeTheme(ids.theme.value),
     mediaBasePath: normalizePath(ids.mediaBasePath.value),
     useBasePathDefaults: ids.useBasePathDefaults.checked,
-    radarrRootPath: asText(ids.radarrRootPath.value),
-    sonarrRootPath: asText(ids.sonarrRootPath.value),
     sabDownloadDir: asText(ids.sabDownloadDir.value),
     sabCompleteDir: asText(ids.sabCompleteDir.value),
     autoConfigureAppLinks: ids.autoConfigureAppLinks.checked,
@@ -105,10 +139,9 @@ function collectPayload() {
 function fillFields(settings) {
   const source = settings || {};
   ids.language.value = asText(source.language) || "en";
+  ids.theme.value = normalizeTheme(source.theme);
   ids.mediaBasePath.value = asText(source.mediaBasePath);
   ids.useBasePathDefaults.checked = source.useBasePathDefaults !== false;
-  ids.radarrRootPath.value = asText(source.radarrRootPath);
-  ids.sonarrRootPath.value = asText(source.sonarrRootPath);
   ids.sabDownloadDir.value = asText(source.sabDownloadDir);
   ids.sabCompleteDir.value = asText(source.sabCompleteDir);
   ids.autoConfigureAppLinks.checked = source.autoConfigureAppLinks !== false;
@@ -124,6 +157,7 @@ async function bootstrap() {
   try {
     const status = await apiGet("/api/settings");
     fillFields(status.settings || {});
+    setTheme(status.settings?.theme || detectInitialTheme(), false);
     const lastApply = status.lastApply || {};
     if (lastApply.at) {
       const warnings = lastApply.warnings || [];
@@ -138,6 +172,7 @@ async function bootstrap() {
     }
   } catch (error) {
     setMessage(`Failed to load settings: ${error.message}`, true);
+    setTheme(detectInitialTheme(), false);
   }
 }
 
@@ -158,6 +193,7 @@ ids.form.addEventListener("submit", async (event) => {
     }
 
     localStorage.setItem("dashboard_language", payload.language);
+    setTheme(ids.theme.value, true);
     const warnings = response.data.warnings || [];
     if (warnings.length > 0) {
       setMessage(`Settings saved with warnings: ${warnings.join(" | ")}`, false);
@@ -176,5 +212,9 @@ ids.mediaBasePath.addEventListener("input", applyBasePathDefaults);
 ids.useBasePathDefaults.addEventListener("change", () => {
   applyBasePathDefaults();
 });
+ids.theme.addEventListener("change", (event) => {
+  setTheme(event.target.value, true);
+});
 
+setTheme(detectInitialTheme(), false);
 bootstrap();

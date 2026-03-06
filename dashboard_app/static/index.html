@@ -18,12 +18,31 @@
         <img class="hero-brand-left" src="./images/MOD_logo.png" alt="Media Operations Dashboard">
       </div>
       <div class="hero-meta">
-        <div class="lang-switch">
-          <label for="languageSelect" data-i18n="ui.language">Language</label>
-          <select id="languageSelect" aria-label="Language">
-            <option value="en" data-i18n="lang.en">English</option>
-            <option value="de" data-i18n="lang.de">Deutsch</option>
-          </select>
+        <div class="hero-controls">
+          <div class="lang-switch">
+            <label for="languageSelect" data-i18n="ui.language">Language</label>
+            <select id="languageSelect" aria-label="Language">
+              <option value="en" data-i18n="lang.en">English</option>
+              <option value="de" data-i18n="lang.de">Deutsch</option>
+            </select>
+          </div>
+          <div class="theme-switch">
+            <span class="switch-title" data-i18n="ui.theme">Theme</span>
+            <div class="theme-options" role="group" aria-label="Theme">
+              <button type="button" class="theme-option" data-theme-choice="classic" aria-pressed="false">
+                <span class="theme-swatch classic" aria-hidden="true"></span>
+                <span data-i18n="theme.classic">Classic MOD</span>
+              </button>
+              <button type="button" class="theme-option" data-theme-choice="black" aria-pressed="false">
+                <span class="theme-swatch black" aria-hidden="true"></span>
+                <span data-i18n="theme.black">Black</span>
+              </button>
+              <button type="button" class="theme-option" data-theme-choice="light" aria-pressed="false">
+                <span class="theme-swatch light" aria-hidden="true"></span>
+                <span data-i18n="theme.light">Light</span>
+              </button>
+            </div>
+          </div>
         </div>
         <a class="settings-link" href="/settings" data-i18n="action.settings">Settings</a>
         <span id="lastUpdated" data-i18n="status.waiting">Waiting for refresh...</span>
@@ -79,43 +98,6 @@
               </thead>
               <tbody id="containerRows"></tbody>
             </table>
-          </div>
-        </article>
-
-        <article class="panel control-card">
-          <div class="panel-head">
-            <div>
-              <h2 data-i18n="panel.rootFolders">Root Folders</h2>
-              <p data-i18n="panel.rootFoldersDesc">Add or remove root folders for Radarr and Sonarr.</p>
-            </div>
-          </div>
-
-          <div class="folder-section">
-            <div class="folder-head">
-              <div class="title-with-logo">
-                <img src="./images/radar_logo.png" alt="Radarr">
-                <h3 data-i18n="panel.radarrRoots">Radarr Roots</h3>
-              </div>
-              <form id="radarrRootForm" class="inline-form">
-                <input id="radarrRootInput" type="text" placeholder="/media/movies" data-i18n-placeholder="placeholder.radarrRoot" required>
-                <button type="submit" data-i18n="action.add">Add</button>
-              </form>
-            </div>
-            <div class="chip-list" id="radarrRootList"></div>
-          </div>
-
-          <div class="folder-section">
-            <div class="folder-head">
-              <div class="title-with-logo">
-                <img src="./images/sonarr_logo.png" alt="Sonarr">
-                <h3 data-i18n="panel.sonarrRoots">Sonarr Roots</h3>
-              </div>
-              <form id="sonarrRootForm" class="inline-form">
-                <input id="sonarrRootInput" type="text" placeholder="/media/tv" data-i18n-placeholder="placeholder.sonarrRoot" required>
-                <button type="submit" data-i18n="action.add">Add</button>
-              </form>
-            </div>
-            <div class="chip-list" id="sonarrRootList"></div>
           </div>
         </article>
 

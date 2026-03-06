@@ -4,8 +4,6 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 
 from .arr import (
-    arr_add_rootfolder,
-    arr_rootfolders_data,
     arr_service_config,
     configure_arr_sab_download_client,
 )
@@ -16,6 +14,7 @@ from .sab import set_sab_paths
 STATE_DIR = MEDIA_ROOT_DIR / ".mod"
 STATE_FILE = STATE_DIR / "settings.json"
 SUPPORTED_LANGUAGES = {"en", "de"}
+SUPPORTED_THEMES = {"classic", "black", "light"}
 
 
 def _now_iso() -> str:
@@ -50,10 +49,9 @@ def _default_settings() -> dict:
     media_root = str(MEDIA_ROOT_DIR).replace("\\", "/").rstrip("/") or "/media"
     return {
         "language": "en",
+        "theme": "classic",
         "mediaBasePath": media_root,
         "useBasePathDefaults": True,
-        "radarrRootPath": f"{media_root}/movies",
-        "sonarrRootPath": f"{media_root}/tv",
         "sabDownloadDir": f"{media_root}/downloads/incomplete",
         "sabCompleteDir": f"{media_root}/downloads/complete",
         "radarrSabCategory": "movies",
@@ -90,6 +88,10 @@ def _merged_settings(raw_settings: dict | None = None) -> dict:
             lang = _to_text(source.get("language")) or defaults["language"]
             settings["language"] = lang if lang in SUPPORTED_LANGUAGES else defaults["language"]
             continue
+        if key == "theme":
+            theme = _to_text(source.get("theme")).lower() or defaults["theme"]
+            settings["theme"] = theme if theme in SUPPORTED_THEMES else defaults["theme"]
+            continue
         if key in {"useBasePathDefaults", "autoConfigureAppLinks"}:
             settings[key] = _to_bool(source.get(key), defaults[key])
             continue
@@ -108,8 +110,6 @@ def _apply_base_path_defaults(settings: dict) -> dict:
     if not base or not base.startswith("/"):
         return settings
     settings["mediaBasePath"] = base
-    settings["radarrRootPath"] = f"{base}/movies"
-    settings["sonarrRootPath"] = f"{base}/tv"
     settings["sabDownloadDir"] = f"{base}/downloads/incomplete"
     settings["sabCompleteDir"] = f"{base}/downloads/complete"
     return settings
@@ -135,7 +135,7 @@ def _validate_settings(settings: dict) -> list[str]:
             errors.append("mediaBasePath is required when useBasePathDefaults is enabled")
         elif not base.startswith("/"):
             errors.append("mediaBasePath must be an absolute path")
-    for key in ("radarrRootPath", "sonarrRootPath", "sabDownloadDir", "sabCompleteDir"):
+    for key in ("sabDownloadDir", "sabCompleteDir"):
         value = _normalize_path(settings.get(key))
         if not value:
             errors.append(f"{key} is required")
@@ -144,6 +144,9 @@ def _validate_settings(settings: dict) -> list[str]:
             errors.append(f"{key} must be an absolute path")
     if settings.get("language") not in SUPPORTED_LANGUAGES:
         errors.append("language must be one of: en, de")
+    if settings.get("theme") not in SUPPORTED_THEMES:
+        errors.append("theme must be one of: classic, black, light")
+
     return errors
 
 
@@ -153,46 +156,6 @@ def _ensure_directory(path_text: str) -> dict:
         return {"ok": True, "path": path_text}
     except OSError as exc:
         return {"ok": False, "path": path_text, "error": str(exc)}
-
-
-def _ensure_arr_root(service_name: str, path_text: str) -> dict:
-    normalized = _normalize_path(path_text).lower()
-    try:
-        payload = arr_rootfolders_data(service_name)
-        existing = {
-            _normalize_path(item.get("path", "")).lower()
-            for item in payload.get("folders", [])
-            if _normalize_path(item.get("path", ""))
-        }
-        if normalized in existing:
-            return {"ok": True, "service": service_name, "path": path_text, "applied": False, "reason": "already-exists"}
-        add_result = arr_add_rootfolder(service_name, path_text)
-        return {
-            "ok": bool(add_result.get("ok")),
-            "service": service_name,
-            "path": path_text,
-            "applied": True,
-            "result": add_result,
-        }
-    except (URLError, HTTPError, TimeoutError, ValueError, json.JSONDecodeError, OSError) as exc:
-        try:
-            payload = arr_rootfolders_data(service_name)
-            existing = {
-                _normalize_path(item.get("path", "")).lower()
-                for item in payload.get("folders", [])
-                if _normalize_path(item.get("path", ""))
-            }
-            if normalized in existing:
-                return {
-                    "ok": True,
-                    "service": service_name,
-                    "path": path_text,
-                    "applied": False,
-                    "reason": "already-exists-after-recheck",
-                }
-        except (URLError, HTTPError, TimeoutError, ValueError, json.JSONDecodeError, OSError):
-            pass
-        return {"ok": False, "service": service_name, "path": path_text, "error": str(exc)}
 
 
 def _apply_sab_paths(download_dir: str, complete_dir: str) -> dict:
@@ -222,13 +185,15 @@ def _configure_arr_download_clients(settings: dict) -> dict:
 
 
 def _configure_ombi_links(settings: dict) -> dict:
+    media_base = _normalize_path(settings.get("mediaBasePath")) or "/media"
+    radarr_root = f"{media_base}/Movies"
     try:
         radarr_conf = arr_service_config("radarr")
         sonarr_conf = arr_service_config("sonarr")
         return configure_ombi_arr_integrations(
             radarr_api_key=radarr_conf.get("api_key", ""),
             sonarr_api_key=sonarr_conf.get("api_key", ""),
-            radarr_root_path=settings["radarrRootPath"],
+            radarr_root_path=radarr_root,
         )
     except (URLError, HTTPError, TimeoutError, ValueError, json.JSONDecodeError, OSError) as exc:
         return {"ok": False, "error": str(exc)}
@@ -259,14 +224,10 @@ def save_settings(raw_payload: dict) -> dict:
         }
 
     filesystem = {
-        "radarrRootPath": _ensure_directory(settings["radarrRootPath"]),
-        "sonarrRootPath": _ensure_directory(settings["sonarrRootPath"]),
         "sabDownloadDir": _ensure_directory(settings["sabDownloadDir"]),
         "sabCompleteDir": _ensure_directory(settings["sabCompleteDir"]),
     }
     automation = {
-        "radarrRoot": _ensure_arr_root("radarr", settings["radarrRootPath"]),
-        "sonarrRoot": _ensure_arr_root("sonarr", settings["sonarrRootPath"]),
         "sabPaths": _apply_sab_paths(settings["sabDownloadDir"], settings["sabCompleteDir"]),
     }
     if settings.get("autoConfigureAppLinks", True):
